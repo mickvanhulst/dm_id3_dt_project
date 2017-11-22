@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 #import pydot_ng
 import operator
-from PIL import Image
+#from PIL import Image
 
 # Import class
 from process_data import Data 
@@ -20,6 +20,7 @@ class id3_decision_tree(object):
         self.class_col = data.class_col
         self.classify_label = classify_label
         self.accuracy = None
+        self.pruning_type = 'post'
         self.result = self.__build_tree(self.train_data, self.features)
 
     def __entropy_formula(self, freq, data):
@@ -50,43 +51,61 @@ class id3_decision_tree(object):
 
         return (self.__entropy(data) - entropy_sub)
 
-    def __build_tree(self, data, features, default_class=None):
-        # Determine occurances per class 
+    def __build_tree(self, data, features, default_class=None, prev_information_gain=-1):
+        '''
+        pre-prune: Grow the tree until the information gain does not increase anymore, then stop and return highest class.
+
+        post-prune keep growing until only one type of class remains. Then prune afterwards to decrease the error rate.
+
+        To do:
+        - Use chi squared test
+        - Add postpruning step
+        - Create an upper function which runs build_tree so that we can optimize afterwards (postpruning)
+        '''
+        # Choose best feature to split on.
+        gain_dict = {feature : self.__information_gain(data, feature) for feature in features}
+        best_feat, best_information_gain = max(gain_dict.items(), key=operator.itemgetter(1))
+         
+        # Determine occurances per class
         cnt = data.groupby(self.class_col).size()
+        print(len(cnt))
+        # Set class which occurs most
+        dominant_class = cnt[max(cnt) == cnt.values].index[0]
+        
+        if self.pruning_type == 'pre': 
+            # Test if node improves impurity measure of previous split.
+            if prev_information_gain >= best_information_gain:
+                # No improvement, so we quit and return the class which occurs most in our current dataset.
+                return dominant_class
+            else:
+                prev_information_gain = best_information_gain
+        elif self.pruning_type == 'post':
+            # If amount of classes in remaining dataset is one, return class.
+            if len(cnt) == 1:
+               # No improvement, so we quit and return the class which occurs most in our current dataset.
+               return dominant_class 
+        
+        # Init empty tree
+        result = {best_feat:{}}
+        remaining_features = [i for i in features if i != best_feat]
+        print(len(remaining_features))
 
-        if len(cnt) == 1:
-            # If len of cnt is one, one class remains (leaf).
-            return cnt.index[0]
-        elif data.empty or (len(features) == 0):
-            # Empty dataset and/or no feature names to split on, return default class
-            return default_class
-        else:
-            # Set default class to majority value
-            default_class = cnt[max(cnt) == cnt.values].index[0]
+        # Create branch for each value in best feature.
+        for attr_val in data[best_feat].unique():
+            data_subset = data[data[best_feat] == attr_val]
+            subtree = self.__build_tree(data_subset,
+                        remaining_features,
+                        default_class,
+                        prev_information_gain)
 
-            # Choose best feature to split on.
-            gain_dict = {feature : self.__information_gain(data, feature) for feature in features}
-            best_feat = max(gain_dict.items(), key=operator.itemgetter(1))[0]
-
-            # Init empty tree
-            result = {best_feat:{}}
-            remaining_features = [i for i in features if i != best_feat]
-
-            # Create branch for each value in best feature.
-            for attr_val in data[best_feat].unique():
-                data_subset = data[data[best_feat] == attr_val]
-                subtree = self.__build_tree(data_subset,
-                            remaining_features,
-                            default_class)
-
-                result[best_feat][attr_val] = subtree
+            result[best_feat][attr_val] = subtree
 
         return result
 
     def classify(self):
         #Classify
         self.test_data[self.classify_label] = self.test_data.apply(self.__classify_loop, axis=1, args=(self.result, 'None_found'))
-
+        
         # Calculate accuracy
         self.accuracy = len(self.test_data[self.test_data[self.class_col] == 
             self.test_data[self.classify_label]].index) / len(self.test_data.index)
@@ -106,80 +125,3 @@ class id3_decision_tree(object):
                 return result # this is a label
         else:
             return default
-    ## ------------------------ VISUALIZATION ------------------------------
-    def __walk_dictionary(self, graph, dictionary, parent_node=None):
-        '''
-        Recursive plotting function for the decision tree stored as a dictionary
-        '''
-
-        for k in dictionary.keys():
-
-            if parent_node is not None:
-
-                from_name = parent_node.get_name().replace("\"", "") + '_' + str(k)
-                from_label = str(k)
-
-                node_from = pydot_ng.Node(from_name, label=from_label)
-                graph.add_node(node_from)
-
-                graph.add_edge( pydot_ng.Edge(parent_node, node_from) )
-
-                if isinstance(dictionary[k], dict): # if interim node
-
-
-                    self.__walk_dictionary(graph, dictionary[k], node_from)
-
-                else: # if leaf node
-                    to_name = str(k) + '_' + str(dictionary[k]) # unique name
-                    to_label = str(dictionary[k])
-
-                    node_to = pydot_ng.Node(to_name, label=to_label, shape='box')
-                    graph.add_node(node_to)
-
-                    graph.add_edge(pydot_ng.Edge(node_from, node_to))
-
-            else:
-
-                from_name =  str(k)
-                from_label = str(k)
-
-                node_from = pydot_ng.Node(from_name, label=from_label)
-                self.__walk_dictionary(graph, dictionary[k], node_from)
-
-
-    def draw_tree(self, image_name, open_image=False):
-        # draw tree
-        graph = pydot_ng.Dot(graph_type='graph')
-        self.__walk_dictionary(graph, self.result)
-        graph.write_png('./results/' + image_name +'.png')
-
-        # Open image 
-        if open_image:
-            img = Image.open('./results/' + image_name +'.png')
-            img.show()
-
-def main():
-    #load dataset
-    df = pd.read_csv('./data/mushrooms.csv')
-
-    # Optional to remove the 'odor' column as it is a dominant feature.
-    #df = df.drop('odor', axis=1)
-    class_label = 'class'
-    features = [x for x in df.columns if x != class_label]
-    classify_label = 'classify'
-
-    # Create data class
-    data = Data(df, features, [classify_label], (2/3), class_label)
-    
-    # build tree & classify data
-    tree = id3_decision_tree(data, classify_label)
-    tree.classify()
-    print(tree.accuracy)
-    print('----------------------- RESULT -----------------------')
-    #print(tree.test_data)
-
-    # Draw tree
-    #tree.draw_tree('tree', True)
-
-if __name__ == '__main__':
-    main()
