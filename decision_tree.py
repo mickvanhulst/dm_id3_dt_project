@@ -48,6 +48,20 @@ class id3_decision_tree(object):
             entropy_sub += val_prob * self.__entropy(data_subset)
 
         return (self.__entropy(data) - entropy_sub)
+    def __pruning(self, cnt, prev_information_gain, best_information_gain):
+        # returns true if stop, returns false if continue.
+        # Test if node improves impurity measure of previous split.
+        if self.pruning_type == 'post':
+            if len(cnt) == 1:
+                return True
+        
+        else:
+            # Pre-pruning
+            if prev_information_gain >= best_information_gain:
+                # No improvement, dso we quit and return the class which occurs most in our current dataset.
+                return True
+            else:
+                prev_information_gain = best_information_gain
 
     def __build_tree(self, data, features, default_class=None, prev_information_gain=-1):
         '''
@@ -72,18 +86,10 @@ class id3_decision_tree(object):
         
         # Set class which occurs most
         dominant_class = cnt[max(cnt) == cnt.values].index[0]
-        if self.pruning_type == 'pre': 
-            # Test if node improves impurity measure of previous split.
-            if prev_information_gain >= best_information_gain:
-                # No improvement, so we quit and return the class which occurs most in our current dataset.
-                return dominant_class
-            else:
-                prev_information_gain = best_information_gain
-        elif self.pruning_type == 'post':
-            # If amount of classes in remaining dataset is one, return class.
-            if len(cnt) == 1:
-               # No improvement, so we quit and return the class which occurs most in our current dataset.
-               return dominant_class 
+        stop = self.__pruning(cnt, prev_information_gain, best_information_gain)
+    
+        if stop: 
+            return dominant_class
         
         # Init empty tree
         result = {best_feat:{}}
