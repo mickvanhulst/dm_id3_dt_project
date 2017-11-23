@@ -19,7 +19,7 @@ class Data(object):
         self.data = data
         self.test_size = test_size
         self.features = features
-        #self.class_col = class_col
+        self.class_col = class_col
         self.cols_to_init = cols_to_init
         self.train_data, self.test_data = self.__process()
 
@@ -27,8 +27,8 @@ class Data(object):
         for col in self.cols_to_init:
             self.data[col] = np.nan
 
-        # OPTIMIZE THIS FUNCTION. BETTER RANDOM SAMPLING IS PROBABLY BETTER.
-        test_data = self.data.sample(frac=(self.test_size))
-        train_data = self.data[~self.data.index.isin(test_data.index.values)]
+        train_data = self.data.sample(frac=(1.0-self.test_size), random_state=200)
+        test_data = self.data.drop(train_data.index)
+
 
         return train_data, test_data

@@ -13,14 +13,22 @@ pd.options.mode.chained_assignment = None
 class id3_decision_tree(object):
 
     def __init__(self, train_data, features, class_col, pred_label, 
-                    pruning_type='pre', stop_type='un_class', max_depth=-1):#data, classify_label):
+                    pruning_type='pre', stop_type='un_class', max_depth=None):
         self.train_data = train_data
         self.features = features
         self.class_col = class_col
         self.pred_label = pred_label
         self.pruning_type = pruning_type
         self.stop_type = stop_type
-        self.max_depth = max_depth
+
+        # Verify if max-depth is positive, else change it to one
+        if (max_depth is not None) and (max_depth < 1):
+            print('Illigal max-depth detected, changed to 1.')
+            self.max_depth = 1
+        else:
+            self.max_depth = max_depth        
+        
+        # Recursively build the tree. 
         self.result = self.__build_tree(train_data, self.features)
 
     def __entropy_formula(self, freq, data):
@@ -72,13 +80,15 @@ class id3_decision_tree(object):
         '''
         Pre-prune: Grow the tree until the information gain does not increase anymore, then stop and return highest class.
         Several options for pre-pruning:
-            * Stop when unique amount of classes is one.
-            * Stop after a certain tree depth.
-            * Stop when information gain doesn't increase at a possible split.
+            * Stop when unique amount of classes is one. *
+            * Stop after a certain tree depth. *
+            * Stop when information gain doesn't increase at a possible split. *
             * Chi-squared test.
         post-prune: keep growing until only one type of class remains. Then prune afterwards to decrease the error rate.
         Several options for post-pruning:
-            *
+            * Stop when unique amount of classes is one. *
+            * Stop after a certain tree depth.*
+            * Implement post-pruning after growing full tree.
         '''
         # Choose best feature to split on.
         gain_dict = {feature : self.__information_gain(data, feature) for feature in features}
@@ -90,7 +100,7 @@ class id3_decision_tree(object):
         dominant_class = cnt[max(cnt) == cnt.values].index[0]
         stop = self.__pruning(cnt, prev_information_gain, best_information_gain)
 
-        if stop or ((tree_depth == self.max_depth) and self.max_depth != -1): 
+        if stop or ((tree_depth == self.max_depth) and self.max_depth > 0): 
             # Return dominant class if we have to stop because of pruning
             # or we have to stop because the max depth is reached.
             return dominant_class
