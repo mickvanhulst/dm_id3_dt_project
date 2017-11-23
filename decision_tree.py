@@ -12,16 +12,16 @@ pd.options.mode.chained_assignment = None
 
 class id3_decision_tree(object):
 
-    def __init__(self, data, classify_label):
-        self.data = data.data
-        self.test_data = data.test_data
-        self.train_data = data.train_data
-        self.features = data.features
-        self.class_col = data.class_col
-        self.classify_label = classify_label
-        self.accuracy = None
-        self.pruning_type = 'post'
-        self.result = self.__build_tree(self.train_data, self.features)
+    def __init__(self, train_data, features, class_col, pred_label, 
+                    pruning_type='pre', stop_type='un_class', max_depth=-1):#data, classify_label):
+        self.train_data = train_data
+        self.features = features
+        self.class_col = class_col
+        self.pred_label = pred_label
+        self.pruning_type = pruning_type
+        self.stop_type = stop_type
+        self.max_depth = max_depth
+        self.result = self.__build_tree(train_data, self.features)
 
     def __entropy_formula(self, freq, data):
         # -probability * log(probability)
@@ -29,11 +29,9 @@ class id3_decision_tree(object):
     
     def __entropy(self, data):
         # Calculate the frequency of each of the values in the target attr
-        val_freq = data[self.class_col].value_counts()
-
+        val_freq = data['class'].value_counts()
         # Calculate the entropy of the data for the target attribute
         entropy = sum([self.__entropy_formula(freq, data) for freq in val_freq.iteritems()])
-            
         return entropy
 
     def __information_gain(self, data, feature):
@@ -42,7 +40,7 @@ class id3_decision_tree(object):
 
         # Calculates the frequency of each of the values in the target attribute
         val_freq = data[feature].value_counts()
-       
+        
         # for each value in subset multiply probability with entropy of that subset
         for val in val_freq.iteritems():
             val_prob = val[1] /  len(data.index)
@@ -53,8 +51,12 @@ class id3_decision_tree(object):
 
     def __build_tree(self, data, features, default_class=None, prev_information_gain=-1):
         '''
-        pre-prune: Grow the tree until the information gain does not increase anymore, then stop and return highest class.
-
+        Pre-prune: Grow the tree until the information gain does not increase anymore, then stop and return highest class.
+        Several options for pre-pruning:
+            * Stop when unique amount of classes is one.
+            * Stop after a certain tree depth.
+            * Stop when information gain doesn't increase at a possible split.
+            * Chi-squared test.
         post-prune keep growing until only one type of class remains. Then prune afterwards to decrease the error rate.
 
         To do:
@@ -65,13 +67,11 @@ class id3_decision_tree(object):
         # Choose best feature to split on.
         gain_dict = {feature : self.__information_gain(data, feature) for feature in features}
         best_feat, best_information_gain = max(gain_dict.items(), key=operator.itemgetter(1))
-         
         # Determine occurances per class
         cnt = data.groupby(self.class_col).size()
-        print(len(cnt))
+        
         # Set class which occurs most
         dominant_class = cnt[max(cnt) == cnt.values].index[0]
-        
         if self.pruning_type == 'pre': 
             # Test if node improves impurity measure of previous split.
             if prev_information_gain >= best_information_gain:
@@ -88,8 +88,7 @@ class id3_decision_tree(object):
         # Init empty tree
         result = {best_feat:{}}
         remaining_features = [i for i in features if i != best_feat]
-        print(len(remaining_features))
-
+        
         # Create branch for each value in best feature.
         for attr_val in data[best_feat].unique():
             data_subset = data[data[best_feat] == attr_val]
@@ -102,13 +101,15 @@ class id3_decision_tree(object):
 
         return result
 
-    def classify(self):
+    def classify(self, test_data):
         #Classify
-        self.test_data[self.classify_label] = self.test_data.apply(self.__classify_loop, axis=1, args=(self.result, 'None_found'))
+        test_data[self.pred_label] = test_data.apply(self.__classify_loop, axis=1, args=(self.result, 'None_found'))
         
         # Calculate accuracy
-        self.accuracy = len(self.test_data[self.test_data[self.class_col] == 
-            self.test_data[self.classify_label]].index) / len(self.test_data.index)
+        accuracy = len(test_data[test_data[self.class_col] == 
+            test_data[self.pred_label]].index) / len(test_data.index)
+
+        return accuracy, test_data
 
     def __classify_loop(self, instance, tree, default=None):
         '''

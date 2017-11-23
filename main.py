@@ -3,7 +3,6 @@ import pandas as pd
 #import pydot_ng
 import operator
 #from PIL import Image
-
 # Import classes
 from process_data import Data 
 from decision_tree import id3_decision_tree
@@ -16,16 +15,20 @@ def main():
     df = df.drop('odor', axis=1)
     class_label = 'class'
     features = [x for x in df.columns if x != class_label]
-    classify_label = 'classify'
+    pred_column = 'classify'
 
-    # Create data class
-    data = Data(df, features, [classify_label], (2/3), class_label)
+    # Split data in train/test/validation.
+    # MAKE SURE THAT WE NEED TO ENTER THE TRAIN DATA FIRST TO CREATE THE TREE
+    # AFTERWARDS TRAIN THE TREE BY ENTERING THE TEST_DATA.
     
-    # build tree & classify data
-    tree = id3_decision_tree(data, classify_label)
-    tree.classify()
-    print(tree.accuracy)
-    print('----------------------- RESULT -----------------------')
+    # Create data class
+    data = Data(df, features, [pred_column], test_size=(2/3))
+    tree = id3_decision_tree(data.train_data, data.features, class_label, pred_column
+        , pruning_type='post', stop_type='un_class')
+    
+    accuracy, classified_test_data = tree.classify(data.test_data)
+    print(accuracy)
+    #print('----------------------- RESULT -----------------------')
     print(tree.result)
 
     # Draw tree (name, object)
