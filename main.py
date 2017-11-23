@@ -24,12 +24,14 @@ def main():
     # Create data class
     data = Data(df, features, [pred_column], test_size=(2/3))
     tree = id3_decision_tree(data.train_data, data.features, class_label, pred_column
-        , pruning_type='post', stop_type='un_class')
+        , pruning_type='post', stop_type='ig', max_depth=1)
     
     accuracy, classified_test_data = tree.classify(data.test_data)
     print(accuracy)
     #print('----------------------- RESULT -----------------------')
     print(tree.result)
+    print(tree.result.keys())
+    
 
     # Draw tree (name, object)
     #tree.draw_tree('tree', True)

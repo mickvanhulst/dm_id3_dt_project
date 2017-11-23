@@ -54,16 +54,21 @@ class id3_decision_tree(object):
         if self.pruning_type == 'post':
             if len(cnt) == 1:
                 return True
-        
+            else: 
+                return False
         else:
             # Pre-pruning
-            if prev_information_gain >= best_information_gain:
-                # No improvement, dso we quit and return the class which occurs most in our current dataset.
+            if (self.stop_type == 'ig') and (prev_information_gain >= best_information_gain):
+                # If we want to stop pruning if IG doesn't improve.
+                return True
+            elif (self.stop_type == 'uc') and (len(cnt) == 1):
+                # If pruning at a unique class
                 return True
             else:
-                prev_information_gain = best_information_gain
+                return False
 
-    def __build_tree(self, data, features, default_class=None, prev_information_gain=-1):
+    def __build_tree(self, data, features, default_class=None, prev_information_gain=-1, 
+            tree_depth=0):
         '''
         Pre-prune: Grow the tree until the information gain does not increase anymore, then stop and return highest class.
         Several options for pre-pruning:
@@ -71,12 +76,9 @@ class id3_decision_tree(object):
             * Stop after a certain tree depth.
             * Stop when information gain doesn't increase at a possible split.
             * Chi-squared test.
-        post-prune keep growing until only one type of class remains. Then prune afterwards to decrease the error rate.
-
-        To do:
-        - Use chi squared test
-        - Add postpruning step
-        - Create an upper function which runs build_tree so that we can optimize afterwards (postpruning)
+        post-prune: keep growing until only one type of class remains. Then prune afterwards to decrease the error rate.
+        Several options for post-pruning:
+            *
         '''
         # Choose best feature to split on.
         gain_dict = {feature : self.__information_gain(data, feature) for feature in features}
@@ -90,7 +92,9 @@ class id3_decision_tree(object):
     
         if stop: 
             return dominant_class
-        
+        else:
+            prev_information_gain = best_information_gain
+
         # Init empty tree
         result = {best_feat:{}}
         remaining_features = [i for i in features if i != best_feat]
@@ -98,11 +102,13 @@ class id3_decision_tree(object):
         # Create branch for each value in best feature.
         for attr_val in data[best_feat].unique():
             data_subset = data[data[best_feat] == attr_val]
-            subtree = self.__build_tree(data_subset,
-                        remaining_features,
-                        default_class,
-                        prev_information_gain)
-
+            if tree_depth < self.max_depth:
+                tree_depth += 1
+                subtree = self.__build_tree(data_subset,
+                            remaining_features,
+                            default_class,
+                            prev_information_gain, tree_depth=0)
+            
             result[best_feat][attr_val] = subtree
 
         return result
