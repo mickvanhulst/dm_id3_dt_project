@@ -29,7 +29,7 @@ class id3_decision_tree(object):
     
     def __entropy(self, data):
         # Calculate the frequency of each of the values in the target attr
-        val_freq = data['class'].value_counts()
+        val_freq = data[self.class_col].value_counts()
         # Calculate the entropy of the data for the target attribute
         entropy = sum([self.__entropy_formula(freq, data) for freq in val_freq.iteritems()])
         return entropy
@@ -89,8 +89,10 @@ class id3_decision_tree(object):
         # Set class which occurs most
         dominant_class = cnt[max(cnt) == cnt.values].index[0]
         stop = self.__pruning(cnt, prev_information_gain, best_information_gain)
-    
-        if stop: 
+
+        if stop or ((tree_depth == self.max_depth) and self.max_depth != -1): 
+            # Return dominant class if we have to stop because of pruning
+            # or we have to stop because the max depth is reached.
             return dominant_class
         else:
             prev_information_gain = best_information_gain
@@ -98,17 +100,19 @@ class id3_decision_tree(object):
         # Init empty tree
         result = {best_feat:{}}
         remaining_features = [i for i in features if i != best_feat]
-        
+
+        # Add one to the tree_depth.
+        tree_depth += 1
+
         # Create branch for each value in best feature.
         for attr_val in data[best_feat].unique():
             data_subset = data[data[best_feat] == attr_val]
-            if tree_depth < self.max_depth:
-                tree_depth += 1
-                subtree = self.__build_tree(data_subset,
-                            remaining_features,
-                            default_class,
-                            prev_information_gain, tree_depth=0)
-            
+            subtree = self.__build_tree(data_subset,
+                        remaining_features,
+                        default_class,
+                        prev_information_gain, 
+                        tree_depth)
+        
             result[best_feat][attr_val] = subtree
 
         return result
