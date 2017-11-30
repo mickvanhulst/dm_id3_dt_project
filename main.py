@@ -1,11 +1,10 @@
 import numpy as np
 import pandas as pd
-#import pydot_ng
 import operator
-#from PIL import Image
+from TreeGraph import *
 # Import classes
 from process_data import Data 
-from decision_tree import id3_decision_tree
+from decision_tree import ID3DecisionTree
 
 def main():
     #load dataset
@@ -19,12 +18,15 @@ def main():
 
     # Split data in train/test/validation.
     data = Data(df, features, [pred_column], test_size=(2/3))
-    tree = id3_decision_tree(data.train_data, data.features, class_label, pred_column
+    tree = ID3DecisionTree(data.train_data, data.features, class_label, pred_column
         , pruning_type='post', stop_type='ig', max_depth=0)
     accuracy, classified_test_data = tree.classify(data.test_data)
     print(accuracy)
     print('----------------------- RESULT -----------------------')
     print(tree.result)
+
+    tree.create_tree_graph()
+    tree.create_visualization_file()
 
 if __name__ == '__main__':
     main()

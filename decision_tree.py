@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-#import pydot_ng
+from TreeGraph import *
 import operator
 #from PIL import Image
 
@@ -10,7 +10,7 @@ from process_data import Data
 # Turn off annoying warning (Link: http://stackoverflow.com/questions/20625582/how-to-deal-with-settingwithcopywarning-in-pandas)
 pd.options.mode.chained_assignment = None
 
-class id3_decision_tree(object):
+class ID3DecisionTree(object):
 
     def __init__(self, train_data, features, class_col, pred_label, 
                     pruning_type='pre', stop_type='un_class', max_depth=None):
@@ -23,13 +23,15 @@ class id3_decision_tree(object):
 
         # Verify if max-depth is positive, else change it to one
         if (max_depth is not None) and (max_depth < 1):
-            print('Illigal max-depth detected, changed to 1.')
+            print('Illigal max-depth detected, changed to 1`.')
             self.max_depth = 1
         else:
             self.max_depth = max_depth        
         
         # Recursively build the tree. 
         self.result = self.__build_tree(train_data, self.features)
+    def create_tree_graph(self):
+        self.tree_graph = TreeGraph(self.result, self.features)
 
     def __entropy_formula(self, freq, data):
         # -probability * log(probability)
@@ -126,6 +128,9 @@ class id3_decision_tree(object):
             result[best_feat][attr_val] = subtree
 
         return result
+
+    def create_visualization_file(self, filename='Tree', format='png'):
+        self.tree_graph.export_image(filename, format)
 
     def classify(self, test_data):
         #Classify
