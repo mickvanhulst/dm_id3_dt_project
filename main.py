@@ -1,12 +1,25 @@
 import numpy as np
 import pandas as pd
 import operator
-from TreeGraph import *
+import os
 # Import classes
 from process_data import Data 
+from TreeGraph import *
 from decision_tree import ID3DecisionTree
 
+def setup_path():
+    valid_input = False
+    while not valid_input:
+        text = input("Please enter the path to your Graphviz folder: ")
+        if os.path.exists(os.path.dirname(text)):
+            os.environ["PATH"] += os.pathsep + str(text)
+            valid_input = True
+        else:
+            print("Path does not exit, try again.")
+
 def main():
+    # Create path for visualization
+    setup_path()
     #load dataset
     df = pd.read_csv('./data/mushrooms.csv')
 
@@ -19,7 +32,7 @@ def main():
     # Split data in train/test/validation.
     data = Data(df, features, [pred_column], test_size=(2/3))
     tree = ID3DecisionTree(data.train_data, data.features, class_label, pred_column
-        , pruning_type='post', stop_type='ig', max_depth=0)
+        , pruning_type='post', stop_type='ig')
     accuracy, classified_test_data = tree.classify(data.test_data)
     print(accuracy)
     print('----------------------- RESULT -----------------------')
