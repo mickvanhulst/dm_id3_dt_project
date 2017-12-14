@@ -1,5 +1,3 @@
 numpy
 pandas
-operator
-os
 pydot

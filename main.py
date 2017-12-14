@@ -19,10 +19,9 @@ def setup_path():
 
 def main():
     # Create path for visualization
-    setup_path()
+    #setup_path()
     #load dataset
     df = pd.read_csv('./data/mushrooms.csv')
-
     # Optional to remove the 'odor' column as it is a dominant feature.
     df = df.drop('odor', axis=1)
     class_label = 'class'
@@ -36,10 +35,12 @@ def main():
     accuracy, classified_test_data = tree.classify(data.test_data)
     print(accuracy)
     print('----------------------- RESULT -----------------------')
-    print(tree.result)
+    tree.chi_squared_test(classified_test_data) 
+    
+    #print(tree.result)
 
-    tree.create_tree_graph()
-    tree.create_visualization_file()
+    #tree.create_tree_graph()
+    #tree.create_visualization_file()
 
 if __name__ == '__main__':
     main()

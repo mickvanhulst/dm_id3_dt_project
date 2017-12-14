@@ -33,6 +33,15 @@ class ID3DecisionTree(object):
     def create_tree_graph(self):
         self.tree_graph = TreeGraph(self.result, self.features)
 
+    def chi_squared_test(self, test_data):#, data, dof, min_prob):
+        # Calculate frequency table.
+        cross_tab =  pd.crosstab(index=test_data[self.class_col], columns=test_data[self.pred_label])
+        #  Calculate chi squared value
+        print(cross_tab)
+        # If value is higher than the min_prob we do not split the node.
+
+
+
     def __entropy_formula(self, freq, data):
         # -probability * log(probability)
         return -(freq[1]/len(data)) * np.log2(freq[1]/len(data))
@@ -80,6 +89,9 @@ class ID3DecisionTree(object):
     def __build_tree(self, data, features, default_class=None, prev_information_gain=-1, 
             tree_depth=0):
         '''
+        General:
+            * Error estimation SSE.
+            * Process schema for different inputs user (user can input error method etc.). 
         Pre-prune: Grow the tree until the information gain does not increase anymore, then stop and return highest class.
         Several options for pre-pruning:
             * Stop when unique amount of classes is one. *

@@ -1,7 +1,7 @@
 import pydot
 
 class TreeGraph:
-    """ An tool to create and export graphs from built (decision) trees.
+    """ A tool to create and export graphs from built (decision) trees.
 
     Attributes:
         tree: A dictionary representing a tree.
