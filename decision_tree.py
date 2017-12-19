@@ -33,15 +33,6 @@ class ID3DecisionTree(object):
     def create_tree_graph(self):
         self.tree_graph = TreeGraph(self.result, self.features)
 
-    def chi_squared_test(self, test_data):#, data, dof, min_prob):
-        # Calculate frequency table.
-        cross_tab =  pd.crosstab(index=test_data[self.class_col], columns=test_data[self.pred_label])
-        #  Calculate chi squared value
-        print(cross_tab)
-        # If value is higher than the min_prob we do not split the node.
-
-
-
     def __entropy_formula(self, freq, data):
         # -probability * log(probability)
         return -(freq[1]/len(data)) * np.log2(freq[1]/len(data))
@@ -97,12 +88,12 @@ class ID3DecisionTree(object):
             * Stop when unique amount of classes is one. *
             * Stop after a certain tree depth. *
             * Stop when information gain doesn't increase at a possible split. *
-            * Chi-squared test.
         post-prune: keep growing until only one type of class remains. Then prune afterwards to decrease the error rate.
         Several options for post-pruning:
             * Stop when unique amount of classes is one. *
             * Stop after a certain tree depth.*
             * Implement post-pruning after growing full tree.
+            * Chi-squared test.
         '''
         # Choose best feature to split on.
         gain_dict = {feature : self.__information_gain(data, feature) for feature in features}
@@ -125,7 +116,7 @@ class ID3DecisionTree(object):
         result = {best_feat:{}}
         remaining_features = [i for i in features if i != best_feat]
 
-        # Add one to the tree_depth.
+        # Increase tree depth.
         tree_depth += 1
 
         # Create branch for each value in best feature.
@@ -141,13 +132,17 @@ class ID3DecisionTree(object):
 
         return result
 
+    def __post_prune():
+        # Here we will post prune the tree.
+        
+        print('todo')
+
     def create_visualization_file(self, filename='Tree', format='png'):
         self.tree_graph.export_image(filename, format)
 
     def classify(self, test_data):
         #Classify
         test_data[self.pred_label] = test_data.apply(self.__classify_loop, axis=1, args=(self.result, 'None_found'))
-        
         # Calculate accuracy
         accuracy = len(test_data[test_data[self.class_col] == 
             test_data[self.pred_label]].index) / len(test_data.index)
