@@ -20,13 +20,11 @@ def main():
     
     #data = Data(df, features, [pred_column], test_size=(2/3))
     tree = ID3DecisionTree(train_data, val_data, features, class_label, pred_column
-        , pruning_type='post')
+        , pruning_type='pre')
     accuracy, classified_test_data = tree.classify(test_data)
-    #print(accuracy)
     #print('----------------------- RESULT -----------------------')
-    print(classified_test_data)
     print(tree.result)
-
+    print('The accuracy of the tree is: ' + str(accuracy))
     # To create a visualization we need to append Graphviz to our path
     path = 'C:/Program Files (x86)/Graphviz2.38/bin/'
     os.environ["PATH"] += os.pathsep + str(path)

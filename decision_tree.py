@@ -79,9 +79,6 @@ class ID3DecisionTree(object):
     def __build_tree(self, data, features, default_class=None, prev_information_gain=-1, 
             tree_depth=0):
         '''
-        General:
-            * Error estimation SSE.
-            * Process schema for different inputs user (user can input error method etc.). 
         Pre-prune: Grow the tree until the information gain does not increase anymore, then stop and return highest class.
         Several options for pre-pruning:
             * Stop when unique amount of classes is one. *
@@ -92,8 +89,8 @@ class ID3DecisionTree(object):
             * Stop when unique amount of classes is one. *
             * Stop after a certain tree depth.*
             * Implement post-pruning after growing full tree.
-            * Chi-squared test.
         '''
+        
         # Choose best feature to split on.
         gain_dict = {feature : self.__information_gain(data, feature) for feature in features}
         best_feat, best_information_gain = max(gain_dict.items(), key=operator.itemgetter(1))
