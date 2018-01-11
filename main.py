@@ -3,23 +3,11 @@ import pandas as pd
 import operator
 import os
 # Import classes
-from process_data import Data 
 from TreeGraph import *
 from decision_tree import ID3DecisionTree
 
-def setup_path():
-    valid_input = False
-    while not valid_input:
-        text = input("Please enter the path to your Graphviz folder: ")
-        if os.path.exists(os.path.dirname(text)):
-            os.environ["PATH"] += os.pathsep + str(text)
-            valid_input = True
-        else:
-            print("Path does not exit, try again.")
-
 def main():
     # Create path for visualization
-    #setup_path()
     #load dataset
     df = pd.read_csv('./data/mushrooms.csv')
     # Optional to remove the 'odor' column as it is a dominant feature.
@@ -27,20 +15,24 @@ def main():
     class_label = 'class'
     features = [x for x in df.columns if x != class_label]
     pred_column = 'classify'
-
-    # Split data in train/test/validation.
-    data = Data(df, features, [pred_column], test_size=(2/3))
-    tree = ID3DecisionTree(data.train_data, data.features, class_label, pred_column
-        , pruning_type='post', stop_type='ig')
-    accuracy, classified_test_data = tree.classify(data.test_data)
-    print(accuracy)
-    print('----------------------- RESULT -----------------------')
-    tree.chi_squared_test(classified_test_data) 
+    # Split data in train/test/validation (40, 30, 30).
+    train_data, val_data, test_data = np.split(df.sample(frac=1), [int(.4*len(df)), int(.7*len(df))])
     
-    #print(tree.result)
+    #data = Data(df, features, [pred_column], test_size=(2/3))
+    tree = ID3DecisionTree(train_data, val_data, features, class_label, pred_column
+        , pruning_type='post')
+    accuracy, classified_test_data = tree.classify(test_data)
+    #print(accuracy)
+    #print('----------------------- RESULT -----------------------')
+    print(classified_test_data)
+    print(tree.result)
 
-    #tree.create_tree_graph()
-    #tree.create_visualization_file()
+    # To create a visualization we need to append Graphviz to our path
+    path = 'C:/Program Files (x86)/Graphviz2.38/bin/'
+    os.environ["PATH"] += os.pathsep + str(path)
+
+    tree.create_tree_graph()
+    tree.create_visualization_file()
 
 if __name__ == '__main__':
     main()

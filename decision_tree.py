@@ -4,22 +4,19 @@ from TreeGraph import *
 import operator
 #from PIL import Image
 
-# Import class
-from process_data import Data 
-
 # Turn off annoying warning (Link: http://stackoverflow.com/questions/20625582/how-to-deal-with-settingwithcopywarning-in-pandas)
 pd.options.mode.chained_assignment = None
 
 class ID3DecisionTree(object):
 
-    def __init__(self, train_data, features, class_col, pred_label, 
-                    pruning_type='pre', stop_type='un_class', max_depth=None):
+    def __init__(self, train_data, val_data ,features, class_col, pred_label, 
+                    pruning_type='pre', max_depth=None):
         self.train_data = train_data
+        self.val_data = val_data
         self.features = features
         self.class_col = class_col
         self.pred_label = pred_label
         self.pruning_type = pruning_type
-        self.stop_type = stop_type
 
         # Verify if max-depth is positive, else change it to one
         if (max_depth is not None) and (max_depth < 1):
@@ -30,6 +27,11 @@ class ID3DecisionTree(object):
         
         # Recursively build the tree. 
         self.result = self.__build_tree(train_data, self.features)
+
+        # Check if we're applying post-pruning, if so, use YOERI's function
+        if self.pruning_type == 'post':
+            print('call function')
+
     def create_tree_graph(self):
         self.tree_graph = TreeGraph(self.result, self.features)
 
@@ -68,11 +70,8 @@ class ID3DecisionTree(object):
                 return False
         else:
             # Pre-pruning
-            if (self.stop_type == 'ig') and (prev_information_gain >= best_information_gain):
+            if prev_information_gain >= best_information_gain:
                 # If we want to stop pruning if IG doesn't improve.
-                return True
-            elif (self.stop_type == 'uc') and (len(cnt) == 1):
-                # If pruning at a unique class
                 return True
             else:
                 return False
@@ -115,10 +114,10 @@ class ID3DecisionTree(object):
         # Init empty tree
         result = {best_feat:{}}
         remaining_features = [i for i in features if i != best_feat]
-
+        
         # Increase tree depth.
         tree_depth += 1
-
+        
         # Create branch for each value in best feature.
         for attr_val in data[best_feat].unique():
             data_subset = data[data[best_feat] == attr_val]
@@ -131,11 +130,6 @@ class ID3DecisionTree(object):
             result[best_feat][attr_val] = subtree
 
         return result
-
-    def __post_prune():
-        # Here we will post prune the tree.
-        
-        print('todo')
 
     def create_visualization_file(self, filename='Tree', format='png'):
         self.tree_graph.export_image(filename, format)
@@ -151,8 +145,7 @@ class ID3DecisionTree(object):
 
     def __classify_loop(self, instance, tree, default=None):
         '''
-        Recursively checks if the result is a dict or not. If it's not a dict, then it's a leaf. 
-        
+        Recursively checks if the result is a dict or not. If it's not a dict, then it's a leaf.
         '''
         attribute = list(tree.keys())[0]
         
