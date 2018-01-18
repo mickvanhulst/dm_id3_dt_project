@@ -13,12 +13,16 @@ def main():
     2. If there's a dominant feature, then we can decide to remove the feature (in this case 'odor' is dominant)
     3. The name of the label which has to be used as the class label
     4. The features/columns of the datasets which we use to build the tree.
+    5. The parameters of the algorithm.
+        - Pruning_type, which can be set to 'pre' or 'post' for pre- or post-pruning.
+        - Max_depth, which determines the maximal tree depth. This may only be a positive number.
 
     Using these inputs, the tree is created and the test set is classified. Afterwards this function
     returns the resulting tree in the form of a dictionary and the accuracy. The user will also find a 
     PNG file in the same folder as this file which is a drawing of the generated tree. To create this visualization
     one needs to follow the steps in the README.md file.
     '''
+    
     df = pd.read_csv('./data/mushrooms.csv')
     df = df.drop('odor', axis=1)
     class_label = 'class'
@@ -34,11 +38,11 @@ def main():
     print(tree.result)
     print('The accuracy of the tree is: ' + str(accuracy))
         
-    # To create a visualization we need to append Graphviz to our path
-    path = 'C:/Program Files (x86)/Graphviz2.38/bin/'
-    os.environ["PATH"] += os.pathsep + str(path)
-    tree.create_tree_graph()
-    tree.create_visualization_file()
+    # To create a visualization we need to append Graphviz to our path, PLEASE SEE README.MD FOR INSTRUCTIONS.
+    #path = 'C:/Program Files (x86)/Graphviz2.38/bin/'
+    #os.environ["PATH"] += os.pathsep + str(path)
+    #tree.create_tree_graph()
+    #tree.create_visualization_file()
 
 if __name__ == '__main__':
     main()
