@@ -4,11 +4,12 @@ import scipy.stats as st
 import operator
 import numpy as np
 
+
 class TreePostPruner:
 
     def __init__(self, original_tree, validation_data, conf_level):
-         '''
-        This function initializes the post-pruning algorithm that is used with the 
+        '''
+        This function initializes the post-pruning algorithm that is used with the
         ID3 Decision Tree algorithm.
         '''
         self.original_tree = original_tree
@@ -25,7 +26,8 @@ class TreePostPruner:
         '''
         validation_tree = dict()
         first_node = list(original_tree.keys())[0]
-        validation_tree[first_node] = self.__add_subtree(original_tree[first_node])
+        validation_tree[first_node] = self.__add_subtree(
+            original_tree[first_node])
         return validation_tree
 
     def __add_subtree(self, tree):
@@ -53,7 +55,8 @@ class TreePostPruner:
             child = actual_tree[first_attribute][attribute_value]
 
             if isinstance(child, dict):  # If the child is also a tree (subtree)
-                actual_tree[first_attribute][attribute_value] = self.__validate(instance, child)
+                actual_tree[first_attribute][attribute_value] = self.__validate(
+                    instance, child)
             else:
                 predicted_class = child[0]
                 actual_class = instance['class'].iloc[0]
@@ -65,7 +68,8 @@ class TreePostPruner:
                 else:
                     actual_bad_rate += 1
 
-                actual_tree[first_attribute][attribute_value] = (predicted_class, actual_good_rate, actual_bad_rate)
+                actual_tree[first_attribute][attribute_value] = (
+                    predicted_class, actual_good_rate, actual_bad_rate)
 
             return actual_tree
 
@@ -81,20 +85,23 @@ class TreePostPruner:
 
                 if isinstance(value, dict):
                     node = value
-                    node_error, good_instances, number_of_instances, tree, preferable_class = self.__prune_tree(node)
-                    node_data = (number_of_instances, good_instances, node_error, key, node, preferable_class)
+                    node_error, good_instances, number_of_instances, tree, preferable_class = self.__prune_tree(
+                        node)
+                    node_data = (number_of_instances, good_instances,
+                                 node_error, key, node, preferable_class)
                     children.append(node_data)
                 else:
                     leaf = value
                     good_instances = leaf[1]
                     bad_instances = leaf[2]
                     number_of_instances = good_instances + bad_instances
-                    
+
                     if number_of_instances == 0:
-                        leaf_error = 0 
+                        leaf_error = 0
                     else:
-                         leaf_error = self.__error_estimation(good_instances / number_of_instances, number_of_instances, self.conf_level)
-                    
+                        leaf_error = self.__error_estimation(
+                            good_instances / number_of_instances, number_of_instances, self.conf_level)
+
                     pred_class = leaf[0]
                     leaf_data = (number_of_instances, good_instances, leaf_error, key, leaf,
                                  dict([(pred_class, number_of_instances)]))
@@ -125,8 +132,10 @@ class TreePostPruner:
 
                 if isinstance(child[4], dict):
                     if not (child[2] > error):
-                        preferable_class = max(class_instances.items(), key=operator.itemgetter(1))[0]
-                        new_tree[child[3]] = (preferable_class, child[1], child[0] - child[1])
+                        preferable_class = max(
+                            class_instances.items(), key=operator.itemgetter(1))[0]
+                        new_tree[child[3]] = (
+                            preferable_class, child[1], child[0] - child[1])
                     else:
                         new_tree[child[3]] = child[4]
 
@@ -143,13 +152,15 @@ class TreePostPruner:
         :param confidence_level: z from normal distribution
         :return: error estimation.
         """
-        z = st.norm.ppf(confidence_level)  # Convert confidence level to z-score.
+        z = st.norm.ppf(
+            confidence_level)  # Convert confidence level to z-score.
 
         # Calculate error estimate
         error_estimate = 0.0
         error_estimate += f
         error_estimate += (math.pow(z, 2) / (2 * n))
-        error_estimate += (z * (math.sqrt((f / n) - (math.pow(f, 2) / n) + (math.pow(z, 2) / (4 * math.pow(n, 2))))))
+        error_estimate += (z * (math.sqrt((f / n) - (math.pow(f, 2) /
+                                                     n) + (math.pow(z, 2) / (4 * math.pow(n, 2))))))
         error_estimate = error_estimate / (1 + (math.pow(z, 2) / n))
 
         return error_estimate  # Return error estimate.

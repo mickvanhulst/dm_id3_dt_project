@@ -33,10 +33,8 @@ class ID3DecisionTree(object):
 
         # Apply post-pruning
         if self.pruning_type == 'post':
-            print(self.result)
             pruner = TreePostPruner(self.result, val_data, conf_interval)
             self.result = pruner.get_tree()
-            print('-----------------------------------------------------------------------')
 
     def __apply_entropy_formula(self, freq, data):
         '''
