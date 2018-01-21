@@ -1,9 +1,8 @@
 import numpy as np
 import pandas as pd
-from TreeGraph import *
+from tree_graph import *
 from post_pruning import TreePostPruner
 import operator
-#from PIL import Image
 
 # Turn off annoying warning (Link: http://stackoverflow.com/questions/20625582/how-to-deal-with-settingwithcopywarning-in-pandas)
 pd.options.mode.chained_assignment = None

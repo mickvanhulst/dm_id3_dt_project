@@ -3,7 +3,7 @@ import pandas as pd
 import operator
 import os
 # Import classes
-from TreeGraph import *
+from tree_graph import *
 from decision_tree import ID3DecisionTree
 
 def main():
