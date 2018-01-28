@@ -21,11 +21,11 @@ class ID3DecisionTree(object):
         self.pruning_type = pruning_type
 
         # Verify if the user's input of max-depth is positive.
-        if (max_depth is not None) and (max_depth < 1):
+        if (max_depth is not None) and ((max_depth < 1) or (not max_depth.is_integer())):
             print('Illigal max-depth detected, changed to 1`.')
             self.max_depth = 1
         else:
-            self.max_depth = max_depth        
+            self.max_depth = max_depth
         
         # Recursively build the tree. 
         self.result = self.__build_tree(train_data, self.features)

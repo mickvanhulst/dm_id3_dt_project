@@ -15,8 +15,7 @@ def main():
     4. The features/columns of the datasets which we use to build the tree.
     5. The parameters of the algorithm.
         - Pruning_type, which can be set to 'pre' or 'post' for pre- or post-pruning.
-        - Max_depth, which determines the maximal tree depth. This may only be a positive number.
-
+        - Max_depth, which determines the maximal tree depth. This may only be a natural number. Non-natural numbers are automatically converted.
     Using these inputs, the tree is created and the test set is classified. Afterwards this function
     returns the resulting tree in the form of a dictionary and the accuracy. The user will also find a 
     PNG file in the same folder as this file which is a drawing of the generated tree. To create this visualization
@@ -31,7 +30,8 @@ def main():
     train_data, val_data, test_data = np.split(df.sample(frac=1), [int(.4*len(df)), int(.7*len(df))])
     
     tree = ID3DecisionTree(train_data, val_data, features, class_label, pred_column
-        , pruning_type='pre')
+        , pruning_type='pre', max_depth=None)
+    
     accuracy, classified_test_data = tree.classify(test_data)
     
     print('----------------------- RESULT -----------------------')
